@@ -170,9 +170,11 @@ class CartBox extends \System\Classes\BaseComponent
     {
         try {
             $postData = post();
-
             $this->cartManager->addOrUpdateCartItem($postData);
-
+            $this->cartManager->applyCondition('tip', [
+                'amountType' => 18.00,
+                'amount' => $this->tippingSelectedType(),
+            ]);
             $this->controller->pageCycle();
 
             return $this->fetchPartials();
@@ -234,8 +236,8 @@ class CartBox extends \System\Classes\BaseComponent
                 throw new ApplicationException(lang('igniter.cart::default.alert_tip_not_applied'));
 
             $this->cartManager->applyCondition('tip', [
-                'amountType' => $amountType,
-                'amount' => $amount,
+                'amountType' => $this->tippingSelectedAmount(),
+                'amount' => $this->tippingSelectedType(),
             ]);
 
             $this->controller->pageCycle();
@@ -327,9 +329,8 @@ class CartBox extends \System\Classes\BaseComponent
 
         $tipValueType = CartSettings::get('tip_value_type', 'F');
         $amounts = (array)CartSettings::get('tip_amounts', []);
-
         $amounts = sort_array($amounts, 'priority');
-
+        $amounts[0]["value"] = 18.00;
         foreach ($amounts as $index => $amount) {
             $amount['valueType'] = $tipValueType;
             $result[$index] = (object)$amount;
@@ -340,12 +341,12 @@ class CartBox extends \System\Classes\BaseComponent
 
     public function tippingSelectedAmount()
     {
-        return optional($this->cartManager->getCart()->getCondition('tip'))->getMetaData('amount', 0) ?? 0;
+        return optional($this->cartManager->getCart()->getCondition('tip'))->getMetaData('amount', 18) ?? 18;
     }
 
     public function tippingSelectedType()
     {
-        return optional($this->cartManager->getCart()->getCondition('tip'))->getMetaData('amountType');
+        return optional($this->cartManager->getCart()->getCondition('tip'))->getMetaData('amountType', 'amount') ?? 'amount';
     }
 
     public function getOptionQuantityTypeValue($cartItem, $optionValue)
@@ -365,3 +366,4 @@ class CartBox extends \System\Classes\BaseComponent
         return $value;
     }
 }
+
